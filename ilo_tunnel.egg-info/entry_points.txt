@@ -1,0 +1,2 @@
+[console_scripts]
+ilo-tunnel = ilo_tunnel.main:main
