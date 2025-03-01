@@ -1,6 +1,6 @@
 # ILO Tunnel Manager
 
-Una aplicación multiplataforma con interfaz gráfica para gestionar túneles SSH para interfaces HP ProLiant ILO.
+Una aplicación multiplataforma con interfaz gráfica para gestionar túneles SSH para interfaces HP ProLiant ILO & Huawei.
 
 ## Características
 
