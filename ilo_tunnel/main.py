@@ -12,9 +12,12 @@ from PyQt6.QtCore import Qt, QProcess, QSettings
 from ssh_manager import SSHManager
 
 class ConnectionProfileDialog(QDialog):
-    def __init__(self, parent=None, profile_data=None):
+    def __init__(self, parent=None, profile_data=None, folders=None, current_folder="DEFAULT"):
         super().__init__(parent)
+        self.port_checkboxes = {}
         self.profile_data = profile_data or {}
+        self.folders = folders or ["DEFAULT"]
+        self.current_folder = current_folder
         self.setWindowTitle("Perfil de Conexión")
         self.setMinimumWidth(400)
         self.initUI()
@@ -23,6 +26,13 @@ class ConnectionProfileDialog(QDialog):
         layout = QVBoxLayout(self)
         
         form_layout = QFormLayout()
+        
+        # Carpeta
+        self.folder_combo = QComboBox()
+        self.folder_combo.addItems(self.folders)
+        if self.current_folder in self.folders:
+            self.folder_combo.setCurrentText(self.current_folder)
+        form_layout.addRow("Carpeta:", self.folder_combo)
         
         # Profile name
         self.profile_name = QLineEdit()
@@ -57,43 +67,13 @@ class ConnectionProfileDialog(QDialog):
         
         layout.addLayout(form_layout)
         
-        # Ports to tunnel
-        ports_group = QWidget()
-        ports_layout = QGridLayout(ports_group)
-        
-        # Define common ILO ports
-        self.port_checkboxes = {}
-        common_ports = {
-            "SSH (22)": 22,
-            "Telnet (23)": 23,
-            "HTTP (80)": 80,
-            "HTTPS (443)": 443,
-            "RDP (3389)": 3389,
-            "ILO (17988)": 17988,
-            "ILO (9300)": 9300,
-            "ILO (17990)": 17990,
-            "ILO (3002)": 3002,
-            "ILO (2198)": 2198
-        }
-        
-        saved_ports = self.profile_data.get("ports", {})
-        
-        row, col = 0, 0
-        for name, port in common_ports.items():
-            checkbox = QCheckBox(name)
-            # If profile data exists, use saved port state, otherwise default to True
-            is_checked = saved_ports.get(str(port), True)
-            checkbox.setChecked(is_checked)
-            checkbox.port = port
-            self.port_checkboxes[port] = checkbox
-            ports_layout.addWidget(checkbox, row, col)
-            col += 1
-            if col > 2:
-                col = 0
-                row += 1
-        
-        layout.addWidget(QLabel("Puertos a tunelizar:"))
-        layout.addWidget(ports_group)
+        # Los puertos se manejan internamente y no se muestran en la interfaz
+        self.port_data = self.profile_data.get("ports", {})
+        if not self.port_data:
+            # Establecer todos los puertos a True por defecto
+            common_ports = [22, 23, 80, 443, 3389, 17988, 9300, 17990, 3002, 2198]
+            for port in common_ports:
+                self.port_data[str(port)] = True
         
         # Dialog buttons
         buttons = QDialogButtonBox(
@@ -105,10 +85,6 @@ class ConnectionProfileDialog(QDialog):
     
     def get_profile_data(self):
         # Collect all profile data
-        ports_data = {}
-        for port, checkbox in self.port_checkboxes.items():
-            ports_data[str(port)] = checkbox.isChecked()
-            
         return {
             "name": self.profile_name.text(),
             "ilo_ip": self.ilo_ip.text(),
@@ -117,8 +93,11 @@ class ConnectionProfileDialog(QDialog):
             "ssh_port": self.ssh_port.value(),
             "local_ip": self.local_ip.text(),
             "key_path": self.key_path.text(),
-            "ports": ports_data
+            "ports": self.port_data
         }
+    
+    def get_selected_folder(self):
+        return self.folder_combo.currentText()
     
     def validate(self):
         if not self.profile_name.text():
@@ -148,36 +127,196 @@ class ProfileManager:
     def __init__(self):
         self.settings = QSettings("ILOTunnel", "ILOTunnelApp")
         
-    def get_profiles(self):
-        profiles_json = self.settings.value("connection_profiles", "[]")
+    def get_profiles(self, folder=None):
+        profiles_json = self.settings.value("connection_profiles", "{}")
         try:
-            return json.loads(profiles_json)
+            profiles_data = json.loads(profiles_json)
+            
+            # Si no hay estructura de carpetas, convertir al nuevo formato
+            if isinstance(profiles_data, list):
+                profiles_data = {"DEFAULT": profiles_data}
+                self.save_profiles_data(profiles_data)
+            
+            if folder:
+                return profiles_data.get(folder, [])
+            else:
+                return profiles_data
         except:
-            return []
+            # Inicializar con estructura de carpetas vacía
+            return {"DEFAULT": []}
     
-    def save_profiles(self, profiles):
-        self.settings.setValue("connection_profiles", json.dumps(profiles))
+    def get_folders(self):
+        profiles_data = self.get_profiles()
+        return list(profiles_data.keys())
     
-    def add_profile(self, profile_data):
-        profiles = self.get_profiles()
-        profiles.append(profile_data)
-        self.save_profiles(profiles)
+    def save_profiles_data(self, profiles_data):
+        self.settings.setValue("connection_profiles", json.dumps(profiles_data))
     
-    def update_profile(self, index, profile_data):
-        profiles = self.get_profiles()
-        if 0 <= index < len(profiles):
-            profiles[index] = profile_data
-            self.save_profiles(profiles)
+    def add_profile(self, profile_data, folder="DEFAULT"):
+        profiles_data = self.get_profiles()
+        if folder not in profiles_data:
+            profiles_data[folder] = []
+        profiles_data[folder].append(profile_data)
+        self.save_profiles_data(profiles_data)
     
-    def delete_profile(self, index):
-        profiles = self.get_profiles()
-        if 0 <= index < len(profiles):
-            del profiles[index]
-            self.save_profiles(profiles)
+    def update_profile(self, folder, index, profile_data):
+        profiles_data = self.get_profiles()
+        if folder in profiles_data and 0 <= index < len(profiles_data[folder]):
+            profiles_data[folder][index] = profile_data
+            self.save_profiles_data(profiles_data)
     
-    def get_profile_names(self):
-        return [profile["name"] for profile in self.get_profiles()]
+    def delete_profile(self, folder, index):
+        profiles_data = self.get_profiles()
+        if folder in profiles_data and 0 <= index < len(profiles_data[folder]):
+            del profiles_data[folder][index]
+            self.save_profiles_data(profiles_data)
+    
+    def get_profile_names(self, folder="DEFAULT"):
+        return [profile["name"] for profile in self.get_profiles(folder)]
+    
+    def add_folder(self, folder_name):
+        if not folder_name:
+            return False
+            
+        profiles_data = self.get_profiles()
+        if folder_name not in profiles_data:
+            profiles_data[folder_name] = []
+            self.save_profiles_data(profiles_data)
+            return True
+        return False
+    
+    def rename_folder(self, old_name, new_name):
+        if not new_name or old_name == new_name:
+            return False
+            
+        profiles_data = self.get_profiles()
+        if old_name in profiles_data and new_name not in profiles_data:
+            profiles_data[new_name] = profiles_data.pop(old_name)
+            self.save_profiles_data(profiles_data)
+            return True
+        return False
+    
+    def delete_folder(self, folder_name):
+        if folder_name == "DEFAULT":
+            return False  # No permitir eliminar la carpeta por defecto
+            
+        profiles_data = self.get_profiles()
+        if folder_name in profiles_data:
+            del profiles_data[folder_name]
+            self.save_profiles_data(profiles_data)
+            return True
+        return False
+    
+    def move_profile(self, source_folder, index, target_folder):
+        profiles_data = self.get_profiles()
+        if (source_folder in profiles_data and 
+            target_folder in profiles_data and 
+            0 <= index < len(profiles_data[source_folder])):
+            
+            profile = profiles_data[source_folder].pop(index)
+            profiles_data[target_folder].append(profile)
+            self.save_profiles_data(profiles_data)
+            return True
+        return False
 
+class FolderManagementDialog(QDialog):
+    def __init__(self, parent=None, profile_manager=None):
+        super().__init__(parent)
+        self.profile_manager = profile_manager
+        self.setWindowTitle("Gestión de Carpetas")
+        self.setMinimumWidth(350)
+        self.initUI()
+        
+    def initUI(self):
+        layout = QVBoxLayout(self)
+        
+        # Lista de carpetas
+        self.folder_list = QListWidget()
+        self.folder_list.addItems(self.profile_manager.get_folders())
+        layout.addWidget(QLabel("Carpetas:"))
+        layout.addWidget(self.folder_list)
+        
+        # Botones de acción
+        buttons_layout = QHBoxLayout()
+        
+        self.add_button = QPushButton("Añadir")
+        self.add_button.clicked.connect(self.add_folder)
+        buttons_layout.addWidget(self.add_button)
+        
+        self.rename_button = QPushButton("Renombrar")
+        self.rename_button.clicked.connect(self.rename_folder)
+        buttons_layout.addWidget(self.rename_button)
+        
+        self.delete_button = QPushButton("Eliminar")
+        self.delete_button.clicked.connect(self.delete_folder)
+        buttons_layout.addWidget(self.delete_button)
+        
+        layout.addLayout(buttons_layout)
+        
+        # Dialog buttons
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+    
+    def add_folder(self):
+        folder_name, ok = QInputDialog.getText(
+            self, "Nueva Carpeta", "Nombre de la carpeta:"
+        )
+        
+        if ok and folder_name:
+            if self.profile_manager.add_folder(folder_name):
+                self.refresh_folder_list()
+            else:
+                QMessageBox.warning(self, "Error", "Ya existe una carpeta con ese nombre.")
+    
+    def rename_folder(self):
+        current_row = self.folder_list.currentRow()
+        if current_row < 0:
+            QMessageBox.warning(self, "Error", "Selecciona una carpeta para renombrar.")
+            return
+        
+        old_name = self.folder_list.item(current_row).text()
+        if old_name == "DEFAULT":
+            QMessageBox.warning(self, "Error", "No se puede renombrar la carpeta por defecto.")
+            return
+        
+        new_name, ok = QInputDialog.getText(
+            self, "Renombrar Carpeta", "Nuevo nombre:", text=old_name
+        )
+        
+        if ok and new_name:
+            if self.profile_manager.rename_folder(old_name, new_name):
+                self.refresh_folder_list()
+            else:
+                QMessageBox.warning(self, "Error", "No se pudo renombrar la carpeta.")
+    
+    def delete_folder(self):
+        current_row = self.folder_list.currentRow()
+        if current_row < 0:
+            QMessageBox.warning(self, "Error", "Selecciona una carpeta para eliminar.")
+            return
+        
+        folder_name = self.folder_list.item(current_row).text()
+        if folder_name == "DEFAULT":
+            QMessageBox.warning(self, "Error", "No se puede eliminar la carpeta por defecto.")
+            return
+        
+        confirm = QMessageBox.question(
+            self, "Confirmar eliminación",
+            f"¿Estás seguro de que deseas eliminar la carpeta '{folder_name}'?\n"
+            "Todos los perfiles en esta carpeta se perderán.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        
+        if confirm == QMessageBox.StandardButton.Yes:
+            if self.profile_manager.delete_folder(folder_name):
+                self.refresh_folder_list()
+            else:
+                QMessageBox.warning(self, "Error", "No se pudo eliminar la carpeta.")
+    
+    def refresh_folder_list(self):
+        self.folder_list.clear()
+        self.folder_list.addItems(self.profile_manager.get_folders())
 
 class ILOTunnelApp(QMainWindow):
     def __init__(self):
@@ -185,6 +324,7 @@ class ILOTunnelApp(QMainWindow):
         self.process = None
         self.settings = QSettings("ILOTunnel", "ILOTunnelApp")
         self.profile_manager = ProfileManager()
+        self.current_folder = "DEFAULT"
         self.initUI()
         self.loadSettings()
         
@@ -203,6 +343,20 @@ class ILOTunnelApp(QMainWindow):
         # Connection tab
         connection_tab = QWidget()
         connection_layout = QVBoxLayout(connection_tab)
+        
+        # Folder and profile selection
+        profile_header = QHBoxLayout()
+        
+        self.folder_combo = QComboBox()
+        self.folder_combo.currentIndexChanged.connect(self.folder_changed)
+        profile_header.addWidget(QLabel("Carpeta:"))
+        profile_header.addWidget(self.folder_combo)
+        
+        self.manage_folders_button = QPushButton("Gestionar")
+        self.manage_folders_button.clicked.connect(self.manage_folders)
+        profile_header.addWidget(self.manage_folders_button)
+        
+        connection_layout.addLayout(profile_header)
         
         # Profile selection
         profile_layout = QHBoxLayout()
@@ -253,39 +407,11 @@ class ILOTunnelApp(QMainWindow):
         
         connection_layout.addLayout(form_layout)
         
-        # Ports to tunnel
-        ports_group = QWidget()
-        ports_layout = QGridLayout(ports_group)
-        
-        # Define common ILO ports
-        self.port_checkboxes = {}
-        common_ports = {
-            "SSH (22)": 22,
-            "Telnet (23)": 23,
-            "HTTP (80)": 80,
-            "HTTPS (443)": 443,
-            "RDP (3389)": 3389,
-            "ILO (17988)": 17988,
-            "ILO (9300)": 9300,
-            "ILO (17990)": 17990,
-            "ILO (3002)": 3002,
-            "ILO (2198)": 2198
-        }
-        
-        row, col = 0, 0
-        for name, port in common_ports.items():
-            checkbox = QCheckBox(name)
-            checkbox.setChecked(True)
-            checkbox.port = port
-            self.port_checkboxes[port] = checkbox
-            ports_layout.addWidget(checkbox, row, col)
-            col += 1
-            if col > 2:
-                col = 0
-                row += 1
-                
-        connection_layout.addWidget(QLabel("Puertos a tunelizar:"))
-        connection_layout.addWidget(ports_group)
+        # La configuración de puertos ya no se muestra en la UI pero se mantiene internamente
+        self.port_data = {}
+        common_ports = [22, 23, 80, 443, 3389, 17988, 9300, 17990, 3002, 2198]
+        for port in common_ports:
+            self.port_data[str(port)] = True
         
         # Action buttons
         action_layout = QHBoxLayout()
@@ -318,7 +444,7 @@ class ILOTunnelApp(QMainWindow):
         # Add connection tab
         tabs.addTab(connection_tab, "Conexión")
         
-        # Help tab
+        # Help tab (mantiene el código original)
         help_tab = QWidget()
         help_layout = QVBoxLayout(help_tab)
         
@@ -330,14 +456,13 @@ class ILOTunnelApp(QMainWindow):
         
         <h3>Instrucciones:</h3>
         <ol>
-            <li>Selecciona un perfil existente o crea uno nuevo.</li>
+            <li>Selecciona una carpeta y un perfil existente o crea uno nuevo.</li>
             <li>Introduce la dirección IP de la interfaz ILO a la que quieres conectarte.</li>
             <li>Introduce el usuario SSH para acceder al gateway.</li>
             <li>Introduce la dirección IP del gateway SSH.</li>
             <li>Ajusta el puerto SSH si es necesario (por defecto es 22).</li>
             <li>La IP local por defecto es 127.0.0.1, pero puedes cambiarla si lo necesitas.</li>
             <li>Indica la ruta a tu clave SSH privada.</li>
-            <li>Marca los puertos que quieras tunelizar.</li>
             <li>Haz clic en "Conectar" para establecer el túnel.</li>
             <li>Utiliza "Abrir en Navegador" para acceder a la interfaz web ILO.</li>
         </ol>
@@ -350,38 +475,17 @@ class ILOTunnelApp(QMainWindow):
             <li><b>Guardar como Perfil:</b> Guarda la configuración actual como un nuevo perfil.</li>
         </ul>
         
+        <h3>Gestión de Carpetas:</h3>
+        <ul>
+            <li>Usa el botón "Gestionar" junto al selector de carpetas para crear, renombrar o eliminar carpetas.</li>
+            <li>Organiza tus perfiles en diferentes carpetas para una mejor gestión.</li>
+        </ul>
+        
         <p><b>Nota:</b> Esta aplicación requiere permisos de administrador para crear los túneles.</p>
         """)
         
         help_layout.addWidget(help_text)
         tabs.addTab(help_tab, "Ayuda")
-        
-        # Manage profiles tab
-        profiles_tab = QWidget()
-        profiles_layout = QVBoxLayout(profiles_tab)
-        
-        self.profiles_list = QListWidget()
-        self.profiles_list.currentRowChanged.connect(self.profile_selected)
-        profiles_layout.addWidget(QLabel("Perfiles guardados:"))
-        profiles_layout.addWidget(self.profiles_list)
-        
-        profiles_buttons = QHBoxLayout()
-        
-        clone_button = QPushButton("Clonar")
-        clone_button.clicked.connect(self.clone_profile)
-        profiles_buttons.addWidget(clone_button)
-        
-        import_button = QPushButton("Importar")
-        import_button.clicked.connect(self.import_profiles)
-        profiles_buttons.addWidget(import_button)
-        
-        export_button = QPushButton("Exportar")
-        export_button.clicked.connect(self.export_profiles)
-        profiles_buttons.addWidget(export_button)
-        
-        profiles_layout.addLayout(profiles_buttons)
-        
-        tabs.addTab(profiles_tab, "Perfiles")
         
         # Central widget
         self.setCentralWidget(central_widget)
@@ -393,7 +497,16 @@ class ILOTunnelApp(QMainWindow):
         self.ssh_manager.process_finished.connect(self.onProcessFinished)
         
     def loadSettings(self):
-        # Load last used profile
+        # Actualizar lista de carpetas
+        self.update_folder_list()
+        
+        # Cargar última carpeta usada
+        last_folder = self.settings.value("last_folder", "DEFAULT")
+        if last_folder in [self.folder_combo.itemText(i) for i in range(self.folder_combo.count())]:
+            self.folder_combo.setCurrentText(last_folder)
+            self.current_folder = last_folder
+        
+        # Cargar último perfil usado
         self.update_profiles_list()
         last_profile_index = int(self.settings.value("last_profile_index", -1))
         
@@ -408,34 +521,50 @@ class ILOTunnelApp(QMainWindow):
             self.local_ip.setText(self.settings.value("local_ip", "127.0.0.1"))
             self.key_path.setText(self.settings.value("key_path", "~/.ssh/id_rsa"))
             
-            # Load checkbox states
-            for port, checkbox in self.port_checkboxes.items():
-                saved_state = self.settings.value(f"port_{port}", True)
-                # Convert to bool as QSettings saves as string
-                if isinstance(saved_state, str):
-                    saved_state = saved_state.lower() == 'true'
-                checkbox.setChecked(saved_state)
+            # Cargar estado de puertos (ahora interno)
+            saved_ports = self.settings.value("ports", {})
+            if saved_ports:
+                self.port_data = saved_ports
+    
+    def update_folder_list(self):
+        folders = self.profile_manager.get_folders()
+        self.folder_combo.clear()
+        self.folder_combo.addItems(folders)
+    
+    def folder_changed(self, index):
+        if index >= 0:
+            self.current_folder = self.folder_combo.itemText(index)
+            self.settings.setValue("last_folder", self.current_folder)
+            self.update_profiles_list()
+    
+    def manage_folders(self):
+        dialog = FolderManagementDialog(self, self.profile_manager)
+        dialog.exec()
+        
+        # Actualizar la lista de carpetas después de la gestión
+        current_folder = self.folder_combo.currentText()
+        self.update_folder_list()
+        
+        # Intentar mantener la carpeta seleccionada
+        if current_folder in [self.folder_combo.itemText(i) for i in range(self.folder_combo.count())]:
+            self.folder_combo.setCurrentText(current_folder)
+        
+        self.update_profiles_list()
     
     def update_profiles_list(self):
-        # Update both the combo box and list widget
-        profiles = self.profile_manager.get_profiles()
-        
-        # Update combo box
+        # Actualizar lista de perfiles de la carpeta actual
         self.profile_combo.clear()
         self.profile_combo.addItem("-- Seleccionar Perfil --")
+        
+        profiles = self.profile_manager.get_profiles(self.current_folder)
         for profile in profiles:
             self.profile_combo.addItem(profile["name"])
-        
-        # Update list widget
-        self.profiles_list.clear()
-        for profile in profiles:
-            self.profiles_list.addItem(profile["name"])
     
     def load_profile(self, index):
         if index <= 0:  # Skip the "Select Profile" item
             return
         
-        profiles = self.profile_manager.get_profiles()
+        profiles = self.profile_manager.get_profiles(self.current_folder)
         profile_index = index - 1  # Adjust for the "Select Profile" item
         
         if profile_index < len(profiles):
@@ -447,20 +576,30 @@ class ILOTunnelApp(QMainWindow):
             self.local_ip.setText(profile.get("local_ip", "127.0.0.1"))
             self.key_path.setText(profile.get("key_path", "~/.ssh/id_rsa"))
             
-            # Load port states
-            ports = profile.get("ports", {})
-            for port, checkbox in self.port_checkboxes.items():
-                # Default to True if not specified
-                is_checked = ports.get(str(port), True)
-                checkbox.setChecked(is_checked)
+            # Cargar puertos (ahora interno)
+            self.port_data = profile.get("ports", {})
+            if not self.port_data:
+                # Establecer valores por defecto si no hay datos
+                common_ports = [22, 23, 80, 443, 3389, 17988, 9300, 17990, 3002, 2198]
+                for port in common_ports:
+                    self.port_data[str(port)] = True
             
             self.settings.setValue("last_profile_index", index)
     
     def create_profile(self):
-        dialog = ConnectionProfileDialog(self)
+        folders = self.profile_manager.get_folders()
+        dialog = ConnectionProfileDialog(self, folders=folders, current_folder=self.current_folder)
         if dialog.exec():
             profile_data = dialog.get_profile_data()
-            self.profile_manager.add_profile(profile_data)
+            selected_folder = dialog.get_selected_folder()
+            self.profile_manager.add_profile(profile_data, selected_folder)
+            
+            # Actualizar la carpeta actual si cambió
+            if selected_folder != self.current_folder:
+                self.current_folder = selected_folder
+                self.folder_combo.setCurrentText(selected_folder)
+                self.settings.setValue("last_folder", selected_folder)
+            
             self.update_profiles_list()
             # Select the new profile
             self.profile_combo.setCurrentText(profile_data["name"])
@@ -472,16 +611,34 @@ class ILOTunnelApp(QMainWindow):
             return
         
         profile_index = index - 1  # Adjust for the "Select Profile" item
-        profiles = self.profile_manager.get_profiles()
+        profiles = self.profile_manager.get_profiles(self.current_folder)
         
         if profile_index < len(profiles):
             profile = profiles[profile_index]
-            dialog = ConnectionProfileDialog(self, profile)
+            folders = self.profile_manager.get_folders()
+            dialog = ConnectionProfileDialog(self, profile, folders, self.current_folder)
             
             if dialog.exec():
                 updated_profile = dialog.get_profile_data()
-                self.profile_manager.update_profile(profile_index, updated_profile)
-                self.update_profiles_list()
+                selected_folder = dialog.get_selected_folder()
+                
+                # Si la carpeta cambió, mover el perfil
+                if selected_folder != self.current_folder:
+                    # Añadir a la nueva carpeta
+                    self.profile_manager.add_profile(updated_profile, selected_folder)
+                    # Eliminar de la carpeta actual
+                    self.profile_manager.delete_profile(self.current_folder, profile_index)
+                    
+                    # Actualizar a la nueva carpeta
+                    self.current_folder = selected_folder
+                    self.folder_combo.setCurrentText(selected_folder)
+                    self.settings.setValue("last_folder", selected_folder)
+                    self.update_profiles_list()
+                else:
+                    # Actualizar en la misma carpeta
+                    self.profile_manager.update_profile(self.current_folder, profile_index, updated_profile)
+                    self.update_profiles_list()
+                
                 # Reselect the edited profile
                 self.profile_combo.setCurrentText(updated_profile["name"])
     
@@ -492,7 +649,7 @@ class ILOTunnelApp(QMainWindow):
             return
         
         profile_index = index - 1  # Adjust for the "Select Profile" item
-        profiles = self.profile_manager.get_profiles()
+        profiles = self.profile_manager.get_profiles(self.current_folder)
         
         if profile_index < len(profiles):
             profile_name = profiles[profile_index]["name"]
@@ -503,7 +660,7 @@ class ILOTunnelApp(QMainWindow):
             )
             
             if confirm == QMessageBox.StandardButton.Yes:
-                self.profile_manager.delete_profile(profile_index)
+                self.profile_manager.delete_profile(self.current_folder, profile_index)
                 self.update_profiles_list()
                 self.profile_combo.setCurrentIndex(0)
     
@@ -523,10 +680,6 @@ class ILOTunnelApp(QMainWindow):
             "ports": {}
         }
         
-        # Get port states
-        for port, checkbox in self.port_checkboxes.items():
-            profile_data["ports"][str(port)] = checkbox.isChecked()
-        
         # Ask for profile name
         name, ok = QInputDialog.getText(
             self, "Guardar perfil", "Nombre del perfil:"
@@ -538,7 +691,7 @@ class ILOTunnelApp(QMainWindow):
             self.update_profiles_list()
             # Select the new profile
             self.profile_combo.setCurrentText(name)
-            QMessageBox.information(self, "Perfil guardado", 
+            QMessageBox.information(self, "Perfil guardado",
                                   f"El perfil '{name}' ha sido guardado correctamente.")
     
     def profile_selected(self, row):
