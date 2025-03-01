@@ -1,1 +1,0 @@
-../Resources/ssh_manager.py
