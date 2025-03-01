@@ -444,7 +444,7 @@ class ILOTunnelApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.process = None
-        self.settings = QSettings("ILOTunnel", "ILOTunnelApp")
+        self.settings = QSettings("ILOTunnel.1", "ILOTunnelApp")
         self.profile_manager = ProfileManager()
         self.current_folder = "DEFAULT"
         self.initUI()
