@@ -25,7 +25,7 @@ jobs:
 
       - name: Crear ejecutable con PyInstaller
         run: |
-          pyinstaller --name="ILO Tunnel Manager" --windowed --add-data="ilo_tunnel/resources;resources" --add-data="ilo_tunnel/ssh_manager.py;." ilo_tunnel/main.py  # Ejecuta PyInstaller
+          pyinstaller -y --name="ILO Tunnel Manager" --windowed --add-data="ilo_tunnel/resources;resources" --add-data="ilo_tunnel/ssh_manager.py;." ilo_tunnel/main.py  # Ejecuta PyInstaller
 
 
       - name: Subir ejecutable como artefacto
