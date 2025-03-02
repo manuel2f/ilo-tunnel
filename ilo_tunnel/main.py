@@ -45,7 +45,6 @@ class ConnectionProfileDialog(QDialog):
     def initUI(self):
         layout = QVBoxLayout(self)
 
-
         form_layout = QFormLayout()
 
         # Carpeta
@@ -87,11 +86,11 @@ class ConnectionProfileDialog(QDialog):
         form_layout.addRow("Ruta de la clave SSH:", self.key_path)
 
         layout.addLayout(form_layout)
-        
+
         # Ports to tunnel
         ports_group = QWidget()
         ports_layout = QGridLayout(ports_group)
-        
+
         # Define common ILO ports
         self.port_checkboxes = {}
         common_ports = {
@@ -104,11 +103,11 @@ class ConnectionProfileDialog(QDialog):
             "ILO (9300)": 9300,
             "ILO (17990)": 17990,
             "ILO (3002)": 3002,
-            "ILO (2198)": 2198
+            "ILO (2198)": 2198,
         }
-        
+
         saved_ports = self.profile_data.get("ports", {})
-        
+
         row, col = 0, 0
         for name, port in common_ports.items():
             checkbox = QCheckBox(name)
@@ -122,7 +121,7 @@ class ConnectionProfileDialog(QDialog):
             if col > 2:
                 col = 0
                 row += 1
-        
+
         layout.addWidget(QLabel("Puertos a tunelizar:"))
         layout.addWidget(ports_group)
 
@@ -139,7 +138,7 @@ class ConnectionProfileDialog(QDialog):
         ports_data = {}
         for port, checkbox in self.port_checkboxes.items():
             ports_data[str(port)] = checkbox.isChecked()
-        
+
         return {
             "name": self.profile_name.text(),
             "ilo_ip": self.ilo_ip.text(),
@@ -148,7 +147,7 @@ class ConnectionProfileDialog(QDialog):
             "ssh_port": self.ssh_port.value(),
             "local_ip": self.local_ip.text(),
             "key_path": self.key_path.text(),
-            "ports": self.port_data,
+            "ports": ports_data,
         }
 
     def get_selected_folder(self):
@@ -528,11 +527,11 @@ class ILOTunnelApp(QMainWindow):
         self.key_path.setText("~/.ssh/id_rsa")
         form_layout.addRow("Ruta de la clave SSH:", self.key_path)
         connection_layout.addLayout(form_layout)
-        
+
         # Ports to tunnel
         ports_group = QWidget()
         ports_layout = QGridLayout(ports_group)
-        
+
         # Define common ILO ports
         self.port_checkboxes = {}
         common_ports = {
@@ -545,9 +544,9 @@ class ILOTunnelApp(QMainWindow):
             "ILO (9300)": 9300,
             "ILO (17990)": 17990,
             "ILO (3002)": 3002,
-            "ILO (2198)": 2198
+            "ILO (2198)": 2198,
         }
-        
+
         row, col = 0, 0
         for name, port in common_ports.items():
             checkbox = QCheckBox(name)
@@ -559,7 +558,7 @@ class ILOTunnelApp(QMainWindow):
             if col > 2:
                 col = 0
                 row += 1
-                
+
         connection_layout.addWidget(QLabel("Puertos a tunelizar:"))
         connection_layout.addWidget(ports_group)
 
@@ -801,7 +800,7 @@ class ILOTunnelApp(QMainWindow):
                 # Default to True if not specified
                 is_checked = ports.get(str(port), True)
                 checkbox.setChecked(is_checked)
-            
+
             self.settings.setValue("last_profile_index", index)
 
     def create_profile(self):
@@ -1285,11 +1284,13 @@ class ILOTunnelApp(QMainWindow):
         if current_item:
             self.load_profile_from_list(current_item)
 
+
 def main():
     app = QApplication(sys.argv)
     window = ILOTunnelApp()
     window.show()
     sys.exit(app.exec())
+
 
 if __name__ == "__main__":
     main()
