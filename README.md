@@ -26,6 +26,8 @@ pip install -r requirements.txt
 pip install -e .
 ```
 
+ python -m ilo_tunnel.main
+
 ### Usando binarios precompilados
 
 Descarga los binarios desde la sección de Releases.
