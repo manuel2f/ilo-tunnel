@@ -1,23 +1,10 @@
+# setup.py
 from setuptools import setup, find_packages
-
-with open("README.md", "r", encoding="utf-8") as fh:
-    long_description = fh.read()
 
 setup(
     name="ilo-tunnel",
     version="1.0.0",
-    author="Manuel Fernández",
-    description="Una aplicación GUI para crear túneles SSH para HP ProLiant ILO",
-    long_description=long_description,
-    long_description_content_type="text/markdown",
-    url="https://github.com/tu-usuario/ilo-tunnel",
     packages=find_packages(),
-    classifiers=[
-        "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: MIT License",
-        "Operating System :: OS Independent",
-    ],
-    python_requires=">=3.7",
     install_requires=[
         "PyQt6>=6.0.0",
     ],
@@ -26,8 +13,20 @@ setup(
             "ilo-tunnel=ilo_tunnel.main:main",
         ],
     },
-    include_package_data=True,
-    package_data={
-        "ilo_tunnel": ["resources/**/*"],
-    },
+    author="Manuel Fernández",
+    author_email="manuel2f@gmail.com",
+    description="Una aplicación para gestionar túneles SSH para acceder a interfaces ILO de servidores HP ProLiant",
+    keywords="ssh, tunnel, ilo, hp, proliant",
+    url="https://github.com/manuel2f/ilo-tunnel",
+    python_requires=">=3.8",
+    classifiers=[
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: System Administrators",
+        "License :: OSI Approved :: MIT License",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+    ],
 )
