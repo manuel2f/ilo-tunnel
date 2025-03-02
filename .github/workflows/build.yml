@@ -16,7 +16,7 @@ jobs:
       - name: Configurar Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'  # Instalar Python 3.9
+          python-version: '3.11'  # Instalar Python 3.11
 
       - name: Instalar dependencias
         run: |
@@ -31,7 +31,7 @@ jobs:
             ilo_tunnel/main.py  # Ejecuta PyInstaller
 
       - name: Subir ejecutable como artefacto
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ilo-tunnel-exe
           path: dist/ILO\ Tunnel\ Manager.exe  # El ejecutable generado
