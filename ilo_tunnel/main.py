@@ -959,36 +959,61 @@ class ILOTunnelApp(QMainWindow):
                 self.profile_combo.setCurrentText(name)
 
     def import_profiles(self):
-        # This would typically use a file dialog
-        # For simplicity, we'll use a text input for JSON
         import_json, ok = QInputDialog.getMultiLineText(
             self, "Importar perfiles", "Pega el JSON con los perfiles a importar:"
         )
-
         if ok and import_json:
             try:
-                imported_profiles = json.loads(import_json)
+                imported_data = json.loads(import_json)
 
-                if not isinstance(imported_profiles, list):
+                # Comprobar si es un objeto con una clave (como "DEFAULT")
+                if isinstance(imported_data, dict) and len(imported_data) > 0:
+                    # Es un diccionario con carpetas
+                    imported_folders = imported_data
+                # O si ya es directamente una lista
+                elif isinstance(imported_data, list):
+                    # Convertir a formato con carpetas
+                    imported_folders = {"DEFAULT": imported_data}
+                else:
                     raise ValueError(
-                        "El formato de importación debe ser una lista de perfiles"
+                        "El formato de importación debe ser una lista de perfiles o un objeto con carpetas de perfiles"
                     )
 
-                for profile in imported_profiles:
-                    if not isinstance(profile, dict) or "name" not in profile:
-                        raise ValueError(
-                            "Cada perfil debe ser un objeto con al menos un campo 'name'"
-                        )
+                # Verificar cada perfil
+                total_imported = 0
+                for folder, profiles in imported_folders.items():
+                    if not isinstance(profiles, list):
+                        continue
 
+                    for profile in profiles:
+                        if not isinstance(profile, dict) or "name" not in profile:
+                            raise ValueError(
+                                f"Cada perfil debe ser un objeto con al menos un campo 'name' (carpeta: {folder})"
+                            )
+
+                # Obtener los perfiles actuales
                 current_profiles = self.profile_manager.get_profiles()
-                current_profiles.extend(imported_profiles)
-                self.profile_manager.save_profiles(current_profiles)
+
+                # Combinar los perfiles importados con los actuales
+                for folder, profiles in imported_folders.items():
+                    if folder not in current_profiles:
+                        # Crear la carpeta si no existe
+                        current_profiles[folder] = []
+
+                    # Añadir los perfiles a la carpeta
+                    current_profiles[folder].extend(profiles)
+                    total_imported += len(profiles)
+
+                # Guardar los perfiles actualizados
+                self.profile_manager.save_profiles_data(current_profiles)
+
+                # Actualizar la interfaz
                 self.update_profiles_list()
 
                 QMessageBox.information(
                     self,
                     "Importación completada",
-                    f"Se importaron {len(imported_profiles)} perfiles correctamente.",
+                    f"Se importaron {total_imported} perfiles correctamente en {len(imported_folders)} carpetas.",
                 )
             except Exception as e:
                 QMessageBox.critical(
