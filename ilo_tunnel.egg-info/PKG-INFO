@@ -1,76 +1,27 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.2
 Name: ilo-tunnel
 Version: 1.0.0
-Summary: Una aplicación GUI para crear túneles SSH para HP ProLiant ILO
-Home-page: https://github.com/tu-usuario/ilo-tunnel
+Summary: Una aplicación para gestionar túneles SSH para acceder a interfaces ILO de servidores HP ProLiant
+Home-page: https://github.com/manuel2f/ilo-tunnel
 Author: Manuel Fernández
-Classifier: Programming Language :: Python :: 3
+Author-email: manuel2f@gmail.com
+Keywords: ssh,tunnel,ilo,hp,proliant
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: System Administrators
 Classifier: License :: OSI Approved :: MIT License
-Classifier: Operating System :: OS Independent
-Requires-Python: >=3.7
-Description-Content-Type: text/markdown
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Requires-Python: >=3.8
 License-File: LICENSE
 Requires-Dist: PyQt6>=6.0.0
-
-# ILO Tunnel Manager
-
-Una aplicación multiplataforma con interfaz gráfica para gestionar túneles SSH para interfaces HP ProLiant ILO.
-
-## Características
-
-- Interfaz gráfica fácil de usar
-- Soporte para múltiples puertos de túnel
-- Guardado y carga de configuraciones
-- Soporte multiplataforma (Windows, macOS, Linux)
-- Apertura automática de navegador web
-
-## Instalación
-
-### Desde código fuente
-
-```bash
-# Clonar el repositorio
-git clone https://github.com/tu-usuario/ilo-tunnel.git
-cd ilo-tunnel
-
-# Instalar dependencias
-pip install -r requirements.txt
-
-# Instalar el paquete
-pip install -e .
-```
-
-### Usando binarios precompilados
-
-Descarga los binarios desde la sección de Releases.
-
-## Uso
-
-```bash
-# Ejecutar la aplicación desde línea de comandos
-ilo-tunnel
-
-# O ejecuta el binario descargado
-```
-
-## Desarrollo
-
-### Estructura del proyecto
-
-```
-ilo-tunnel/
-├── ilo_tunnel/         # Paquete principal
-├── scripts/            # Scripts de utilidad
-├── tests/              # Pruebas unitarias
-└── docs/               # Documentación
-```
-
-### Construir el proyecto
-
-```bash
-./scripts/build.sh
-```
-
-## Licencia
-
-MIT
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: home-page
+Dynamic: keywords
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
