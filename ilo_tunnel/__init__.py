@@ -1,6 +1,6 @@
 # ilo_tunnel/__init__.py
 """
-ILO Tunnel Manager - Una aplicación para gestionar túneles SSH 
+ILO Tunnel Manager - Una aplicación para gestionar túneles SSH
 para acceder a interfaces ILO de servidores HP ProLiant and HuaweI.
 """
 

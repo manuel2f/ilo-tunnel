@@ -12,5 +12,15 @@ ilo_tunnel.egg-info/dependency_links.txt
 ilo_tunnel.egg-info/entry_points.txt
 ilo_tunnel.egg-info/requires.txt
 ilo_tunnel.egg-info/top_level.txt
+ilo_tunnel/gui/__init__.py
+ilo_tunnel/gui/dialogs.py
+ilo_tunnel/gui/main_window.py
+ilo_tunnel/gui/widgets.py
+ilo_tunnel/models/__init__.py
+ilo_tunnel/models/profile.py
+ilo_tunnel/models/profile_manager.py
+ilo_tunnel/models/server_types.py
+ilo_tunnel/utils/__init__.py
+ilo_tunnel/utils/system_utils.py
 tests/__init__.py
 tests/test_config.py
