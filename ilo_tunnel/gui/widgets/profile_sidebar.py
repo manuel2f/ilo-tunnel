@@ -6,12 +6,13 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLineEdit,
     QPushButton,
-    QToolButton,
     QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
     QWidget,
 )
+
+from ..theme import Palette, icon
 
 # Roles para distinguir carpetas de perfiles en el árbol
 _FOLDER_ROLE = Qt.ItemDataRole.UserRole + 1
@@ -39,34 +40,35 @@ class ProfileSidebar(QWidget):
 
     def _build_ui(self) -> None:
         root = QVBoxLayout(self)
-        root.setContentsMargins(0, 0, 0, 0)
+        root.setContentsMargins(14, 16, 8, 8)
+        root.setSpacing(10)
 
         self.search = QLineEdit()
         self.search.setPlaceholderText("Buscar perfil…")
         self.search.setClearButtonEnabled(True)
+        self.search.addAction(
+            icon("mdi6.magnify", Palette.TEXT_MUTED),
+            QLineEdit.ActionPosition.LeadingPosition,
+        )
         self.search.textChanged.connect(self._apply_filter)
         root.addWidget(self.search)
 
         self.tree = QTreeWidget()
         self.tree.setHeaderHidden(True)
+        self.tree.setIndentation(14)
         self.tree.currentItemChanged.connect(self._on_current_changed)
         self.tree.itemDoubleClicked.connect(self._on_double_click)
         root.addWidget(self.tree)
 
         actions = QHBoxLayout()
-        self._new_btn = QToolButton()
-        self._new_btn.setText("＋")
-        self._new_btn.setToolTip("Nuevo perfil")
+        actions.setSpacing(6)
+        self._new_btn = self._icon_button("mdi6.plus", "Nuevo perfil")
         self._new_btn.clicked.connect(self.newProfileRequested)
-        self._edit_btn = QToolButton()
-        self._edit_btn.setText("✎")
-        self._edit_btn.setToolTip("Editar perfil")
+        self._edit_btn = self._icon_button("mdi6.pencil-outline", "Editar perfil")
         self._edit_btn.clicked.connect(self._emit_edit)
-        self._del_btn = QToolButton()
-        self._del_btn.setText("🗑")
-        self._del_btn.setToolTip("Eliminar perfil")
+        self._del_btn = self._icon_button("mdi6.trash-can-outline", "Eliminar perfil")
         self._del_btn.clicked.connect(self._emit_delete)
-        folders_btn = QPushButton("Carpetas…")
+        folders_btn = QPushButton(icon("mdi6.folder-outline", Palette.TEXT), " Carpetas")
         folders_btn.setToolTip("Gestionar carpetas")
         folders_btn.clicked.connect(self.manageFoldersRequested)
         actions.addWidget(self._new_btn)
@@ -75,6 +77,14 @@ class ProfileSidebar(QWidget):
         actions.addStretch()
         actions.addWidget(folders_btn)
         root.addLayout(actions)
+
+    @staticmethod
+    def _icon_button(icon_name: str, tooltip: str) -> QPushButton:
+        """Crea un botón-icono uniforme para la gestión de perfiles."""
+        btn = QPushButton(icon(icon_name, Palette.TEXT), "")
+        btn.setObjectName("iconButton")
+        btn.setToolTip(tooltip)
+        return btn
 
     # --------------------------------------------------------------- datos
     def refresh(self, select: Optional[tuple] = None) -> None:

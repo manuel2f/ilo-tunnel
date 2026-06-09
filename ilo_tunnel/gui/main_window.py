@@ -22,6 +22,7 @@ from ..models.profile import ConnectionProfile
 from ..models.profile_manager import ProfileManager
 from .dialogs import ConnectionProfileDialog, FolderManagementDialog
 from .settings_dialog import SettingsDialog
+from .theme import Palette, icon
 from .widgets import (
     ConnectionFormWidget,
     ConnectionStatusBar,
@@ -79,8 +80,11 @@ class ILOTunnelApp(QMainWindow):
         self.profile_title = QLabel("(sin perfil seleccionado)")
         title_font = QFont()
         title_font.setBold(True)
+        title_font.setPointSize(title_font.pointSize() + 3)
         self.profile_title.setFont(title_font)
         self.save_btn = QPushButton("Guardar cambios")
+        self.save_btn.setObjectName("primary")
+        self.save_btn.setIcon(icon("mdi6.content-save-outline", Palette.ON_ACCENT))
         self.save_btn.clicked.connect(self._on_save_changes)
         header.addWidget(self.profile_title)
         header.addStretch()
@@ -88,7 +92,8 @@ class ILOTunnelApp(QMainWindow):
 
         right_top = QWidget()
         rt_layout = QVBoxLayout(right_top)
-        rt_layout.setContentsMargins(0, 0, 0, 0)
+        rt_layout.setContentsMargins(18, 16, 18, 8)
+        rt_layout.setSpacing(14)
         rt_layout.addLayout(header)
         rt_layout.addWidget(form_scroll)
 
@@ -119,21 +124,31 @@ class ILOTunnelApp(QMainWindow):
         toolbar.setMovable(False)
         self.addToolBar(toolbar)
 
-        self.connect_action = QAction("Conectar", self)
+        toolbar.setToolButtonStyle(
+            Qt.ToolButtonStyle.ToolButtonTextBesideIcon
+        )
+
+        self.connect_action = QAction(
+            icon("mdi6.lan-connect", Palette.SUCCESS), "Conectar", self
+        )
         self.connect_action.triggered.connect(self._on_connect)
         toolbar.addAction(self.connect_action)
 
-        self.disconnect_action = QAction("Desconectar", self)
+        self.disconnect_action = QAction(
+            icon("mdi6.lan-disconnect", Palette.DANGER), "Desconectar", self
+        )
         self.disconnect_action.setEnabled(False)
         self.disconnect_action.triggered.connect(self._on_disconnect)
         toolbar.addAction(self.disconnect_action)
 
-        self.browser_action = QAction("Abrir navegador", self)
+        self.browser_action = QAction(
+            icon("mdi6.web"), "Abrir navegador", self
+        )
         self.browser_action.triggered.connect(self._on_open_browser)
         toolbar.addAction(self.browser_action)
 
         toolbar.addSeparator()
-        settings_action = QAction("Ajustes", self)
+        settings_action = QAction(icon("mdi6.cog-outline"), "Ajustes", self)
         settings_action.triggered.connect(self._on_settings)
         toolbar.addAction(settings_action)
 

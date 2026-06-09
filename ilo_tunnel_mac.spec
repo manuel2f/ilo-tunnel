@@ -3,6 +3,8 @@
 import os
 import sys
 
+from PyInstaller.utils.hooks import collect_data_files, collect_submodules
+
 a = Analysis(
     ['run_app.py'],
     pathex=['.'],
@@ -15,7 +17,7 @@ a = Analysis(
         ('ilo_tunnel/controllers', 'ilo_tunnel/controllers'),
         ('ilo_tunnel/app_settings.py', 'ilo_tunnel'),
         ('ilo_tunnel/__init__.py', 'ilo_tunnel'),
-    ],
+    ] + collect_data_files('qtawesome'),
     hiddenimports=[
         'ilo_tunnel',
         'ilo_tunnel.app_settings',
@@ -33,8 +35,9 @@ a = Analysis(
         'ilo_tunnel.gui.main_window',
         'ilo_tunnel.gui.settings_dialog',
         'ilo_tunnel.gui.server_types_dialog',
+        'ilo_tunnel.gui.theme',
         'ilo_tunnel.gui.widgets',
-    ],
+    ] + collect_submodules('qtawesome'),
     hookspath=['hooks'],
     hooksconfig={},
     runtime_hooks=[],

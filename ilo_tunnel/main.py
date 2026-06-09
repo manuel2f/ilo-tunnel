@@ -6,6 +6,7 @@ from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import QDir
 
 from .gui.main_window import ILOTunnelApp
+from .gui.theme import apply_theme
 
 
 def setup_environment():
@@ -31,10 +32,10 @@ def main():
     app = QApplication(sys.argv)
     app.setApplicationName("ILO Tunnel Manager")
     app.setOrganizationName("ILOTunnel")
-    
-    # Establecer estilo de la aplicación (opcional, usar el sistema por defecto)
-    # app.setStyle("Fusion")
-    
+
+    # Aplicar el tema oscuro unificado (estilo + paleta + hoja QSS centralizada)
+    apply_theme(app)
+
     # Crear y mostrar la ventana principal
     window = ILOTunnelApp()
     window.show()

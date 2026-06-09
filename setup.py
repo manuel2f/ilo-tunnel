@@ -7,6 +7,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         "PyQt6>=6.0.0",
+        "qtawesome>=1.3.0",
     ],
     entry_points={
         "console_scripts": [
