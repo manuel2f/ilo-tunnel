@@ -1,20 +1,16 @@
 # ilo_tunnel/models/profile_manager.py
 import json
-import os
 from typing import Dict, List, Optional, Tuple
-from pathlib import Path
 
-from PyQt6.QtCore import QSettings
+from ..app_settings import make_qsettings
 from ..models.profile import ConnectionProfile
-from ..config import Config
 
 
 class ProfileManager:
     """Gestor de perfiles de conexión con soporte para carpetas"""
 
     def __init__(self):
-        self.settings = QSettings("ILOTunnel", "ILOTunnelApp")
-        self.config = Config()
+        self.settings = make_qsettings()
 
     def get_profiles(self, folder: Optional[str] = None) -> Dict[str, List[dict]]:
         """
