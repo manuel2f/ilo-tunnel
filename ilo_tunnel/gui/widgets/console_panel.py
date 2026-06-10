@@ -10,6 +10,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from ..theme import Palette, icon
+
 
 class ConsolePanel(QWidget):
     """Consola de salida del túnel con botones de limpiar / copiar / guardar."""
@@ -21,7 +23,8 @@ class ConsolePanel(QWidget):
 
     def _build_ui(self) -> None:
         root = QVBoxLayout(self)
-        root.setContentsMargins(0, 0, 0, 0)
+        root.setContentsMargins(18, 0, 18, 12)
+        root.setSpacing(8)
 
         self.console = QTextEdit()
         self.console.setReadOnly(True)
@@ -29,30 +32,31 @@ class ConsolePanel(QWidget):
         root.addWidget(self.console)
 
         buttons = QHBoxLayout()
-        clear_btn = QPushButton("Limpiar")
+        buttons.setSpacing(8)
+        clear_btn = QPushButton(icon("mdi6.broom", Palette.TEXT), " Limpiar")
         clear_btn.clicked.connect(self.console.clear)
-        copy_btn = QPushButton("Copiar")
+        copy_btn = QPushButton(icon("mdi6.content-copy", Palette.TEXT), " Copiar")
         copy_btn.clicked.connect(self._copy)
-        save_btn = QPushButton("Guardar")
+        save_btn = QPushButton(icon("mdi6.tray-arrow-down", Palette.TEXT), " Guardar")
         save_btn.clicked.connect(self._save)
+        buttons.addStretch()
         buttons.addWidget(clear_btn)
         buttons.addWidget(copy_btn)
         buttons.addWidget(save_btn)
-        buttons.addStretch()
         root.addLayout(buttons)
 
     # ------------------------------------------------------------- salida
     def append_output(self, text: str) -> None:
         """Añade texto normal a la consola."""
-        self.console.setTextColor(QColor("black"))
+        self.console.setTextColor(QColor(Palette.TEXT))
         self.console.append(text)
         self._maybe_scroll()
 
     def append_error(self, text: str) -> None:
         """Añade texto de error (en rojo) a la consola."""
-        self.console.setTextColor(QColor("red"))
+        self.console.setTextColor(QColor(Palette.DANGER))
         self.console.append(text)
-        self.console.setTextColor(QColor("black"))
+        self.console.setTextColor(QColor(Palette.TEXT))
         self._maybe_scroll()
 
     def _maybe_scroll(self) -> None:

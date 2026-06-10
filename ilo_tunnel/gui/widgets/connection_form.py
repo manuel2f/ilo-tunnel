@@ -2,12 +2,13 @@
 import os
 from typing import List, Tuple
 
-from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QFileDialog,
     QFormLayout,
+    QGridLayout,
     QGroupBox,
     QHBoxLayout,
     QLabel,
@@ -20,7 +21,17 @@ from PyQt6.QtWidgets import (
 
 from ...models.profile import ConnectionProfile
 from ...models.server_types import get_server_description, get_server_types
+from .collapsible import CollapsibleSection
 from .port_selector import PortSelectorWidget
+
+
+def _tune_form(form: QFormLayout) -> None:
+    """Aplica una disposición de rejilla consistente a un QFormLayout."""
+    form.setLabelAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+    form.setFormAlignment(Qt.AlignmentFlag.AlignTop)
+    form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
+    form.setHorizontalSpacing(14)
+    form.setVerticalSpacing(12)
 
 
 class ConnectionFormWidget(QWidget):
@@ -46,10 +57,13 @@ class ConnectionFormWidget(QWidget):
 
     def _build_ui(self, show_port_status: bool) -> None:
         root = QVBoxLayout(self)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(14)
 
         # --- Grupo Básico ---------------------------------------------------
         basic = QGroupBox("Básico")
         basic_form = QFormLayout(basic)
+        _tune_form(basic_form)
 
         if self._include_name:
             self.profile_name = QLineEdit()
@@ -80,10 +94,9 @@ class ConnectionFormWidget(QWidget):
         root.addWidget(basic)
 
         # --- Grupo Avanzado (colapsable) ------------------------------------
-        self.advanced = QGroupBox("Avanzado")
-        self.advanced.setCheckable(True)
-        self.advanced.setChecked(False)
-        adv_form = QFormLayout(self.advanced)
+        self.advanced = CollapsibleSection("Avanzado", expanded=False)
+        adv_form = QFormLayout()
+        _tune_form(adv_form)
 
         self.ssh_port = QSpinBox()
         self.ssh_port.setRange(1, 65535)
@@ -123,10 +136,12 @@ class ConnectionFormWidget(QWidget):
         self.server_type_desc.setWordWrap(True)
         adv_form.addRow("", self.server_type_desc)
 
-        # Opciones SSH (por perfil)
+        # Opciones SSH (por perfil) — rejilla limpia de dos columnas
         options = QWidget()
-        opt_layout = QVBoxLayout(options)
+        opt_layout = QGridLayout(options)
         opt_layout.setContentsMargins(0, 0, 0, 0)
+        opt_layout.setHorizontalSpacing(18)
+        opt_layout.setVerticalSpacing(6)
         self.use_sudo = QCheckBox("Usar sudo (necesario para puertos < 1024)")
         self.use_sudo.setChecked(True)
         self.compress = QCheckBox("Compresión SSH")
@@ -134,15 +149,16 @@ class ConnectionFormWidget(QWidget):
         self.identity_only = QCheckBox("Usar solo la identidad especificada")
         self.identity_only.setChecked(True)
         self.strict_host_key = QCheckBox("Verificación estricta de clave de host")
-        for cb in (
+        checkboxes = (
             self.use_sudo,
             self.compress,
             self.verbose,
             self.identity_only,
             self.strict_host_key,
-        ):
+        )
+        for index, cb in enumerate(checkboxes):
             cb.toggled.connect(self.changed)
-            opt_layout.addWidget(cb)
+            opt_layout.addWidget(cb, index // 2, index % 2)
         adv_form.addRow("Opciones SSH:", options)
 
         self.connect_timeout = QSpinBox()
@@ -152,6 +168,7 @@ class ConnectionFormWidget(QWidget):
         self.connect_timeout.valueChanged.connect(self.changed)
         adv_form.addRow("Timeout de conexión:", self.connect_timeout)
 
+        self.advanced.set_content_layout(adv_form)
         root.addWidget(self.advanced)
 
         # --- Grupo Puertos --------------------------------------------------

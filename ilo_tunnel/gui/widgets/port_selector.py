@@ -51,8 +51,8 @@ class PortSelectorWidget(QWidget):
         root.addWidget(QLabel("Puertos a tunelizar:"))
 
         self._grid = QGridLayout()
-        self._grid.setVerticalSpacing(2)
-        self._grid.setHorizontalSpacing(10)
+        self._grid.setVerticalSpacing(4)
+        self._grid.setHorizontalSpacing(14)
         root.addLayout(self._grid)
 
         # Selección rápida
@@ -113,7 +113,6 @@ class PortSelectorWidget(QWidget):
 
             checkbox = QCheckBox(self._port_label(port, names))
             checkbox.setChecked(checked.get(port, port in names))
-            checkbox.setMaximumHeight(20)
             checkbox.toggled.connect(self.portsChanged)
             self._checkboxes[port] = checkbox
             cell_layout.addWidget(checkbox)

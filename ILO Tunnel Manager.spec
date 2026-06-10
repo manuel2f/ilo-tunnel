@@ -1,12 +1,13 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
 a = Analysis(
     ['ilo_tunnel/main.py'],
     pathex=[],
     binaries=[],
-    datas=[('ilo_tunnel/resources', 'resources'), ('ilo_tunnel/models', 'ilo_tunnel/models'), ('ilo_tunnel/gui', 'ilo_tunnel/gui'), ('ilo_tunnel/services', 'ilo_tunnel/services'), ('ilo_tunnel/controllers', 'ilo_tunnel/controllers'), ('ilo_tunnel/app_settings.py', 'ilo_tunnel')],
-    hiddenimports=['ilo_tunnel.app_settings', 'ilo_tunnel.models.server_types', 'ilo_tunnel.models.profile', 'ilo_tunnel.models.profile_manager', 'ilo_tunnel.services.ssh_manager', 'ilo_tunnel.services.port_checker', 'ilo_tunnel.controllers.connection_controller', 'ilo_tunnel.gui.dialogs', 'ilo_tunnel.gui.main_window', 'ilo_tunnel.gui.settings_dialog', 'ilo_tunnel.gui.server_types_dialog', 'ilo_tunnel.gui.widgets'],
+    datas=[('ilo_tunnel/resources', 'resources'), ('ilo_tunnel/models', 'ilo_tunnel/models'), ('ilo_tunnel/gui', 'ilo_tunnel/gui'), ('ilo_tunnel/services', 'ilo_tunnel/services'), ('ilo_tunnel/controllers', 'ilo_tunnel/controllers'), ('ilo_tunnel/app_settings.py', 'ilo_tunnel')] + collect_data_files('qtawesome'),
+    hiddenimports=['ilo_tunnel.app_settings', 'ilo_tunnel.models.server_types', 'ilo_tunnel.models.profile', 'ilo_tunnel.models.profile_manager', 'ilo_tunnel.services.ssh_manager', 'ilo_tunnel.services.port_checker', 'ilo_tunnel.controllers.connection_controller', 'ilo_tunnel.gui.dialogs', 'ilo_tunnel.gui.main_window', 'ilo_tunnel.gui.settings_dialog', 'ilo_tunnel.gui.server_types_dialog', 'ilo_tunnel.gui.theme', 'ilo_tunnel.gui.widgets'] + collect_submodules('qtawesome'),
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
